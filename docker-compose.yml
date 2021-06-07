@@ -14,6 +14,8 @@ services:
       - db
     networks:
       - balancegame_default
+    env_file:
+      - .env.local
       
     command: nodemon app.js
 

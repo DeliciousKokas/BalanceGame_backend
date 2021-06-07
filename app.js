@@ -2,6 +2,15 @@ const express = require("express");
 const cors = require('cors');
 const app = express();
 const mysql = require('mysql');
+const AWS = require("aws-sdk");
+
+AWS.config.update({
+  region: "ap-northeast-1",
+  endpoint: "dynamodb.ap-northeast-1.amazonaws.com:443"
+});
+
+const docClient = new AWS.DynamoDB.DocumentClient();
+const table = "balance-game-db-dev";
 
 // mysql情報を入力し、接続
 const db = mysql.createConnection({
@@ -27,41 +36,79 @@ const server = app.listen(3000, () => {
 app.get('/api/boxs', (req, res) => {
   console.log('req: get /api/boxs');
 
-  const sql = "SELECT tmp.* FROM `cards` AS tmp INNER JOIN (SELECT CEIL(RAND() * (SELECT MAX(`id`) FROM `cards`)) AS `id`) AS `random` ON tmp.id = random.id;"
+  docClient.scan({
+    TableName: table,
+    Select: "COUNT"
+  },  
+  function(err, data){
+    if(err){
+      console.log(err);
+    }else{
+      const dataCount = data.Count
+      const randomID = Math.floor((Math.random() * dataCount) + 1 );
 
-	db.query(sql, function (err, result, fields) {  
-    if (err) throw err;
-    res.send(result)
-
-    console.log(result);
-    });
+      docClient.get({
+        TableName: table,
+        Key:{
+            "id": randomID,
+        }
+      }, (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(data)
+          res.send(data.Item);
+        }
+      });
+    };
+  });
 });
 
 app.put('/api/boxs/vote', (req, res) => {
   console.log('req: put /api/boxs/vote');
   console.log(req.body.voted);
-  
-  const sql = (req.body.voted === "left") ? "UPDATE cards SET left_voted_amount = left_voted_amount + 1 WHERE ID = ?;" :  "UPDATE cards SET right_voted_amount = right_voted_amount + 1 WHERE ID = ?;"
 
-	db.query(sql, req.body.id, function (err, result, fields) {  
-    if (err) throw err;
-    res.send("like request has been succeed!");
+  const params = {
+    TableName:table,
+    Key:{ "id": req.body.id },
+    UpdateExpression: (req.body.voted === "left") ? "set left_voted_amount = left_voted_amount + :val" : "set right_voted_amount = right_voted_amount + :val",
+    ExpressionAttributeValues:{
+        ":val": 1
+    },
+    ReturnValues:"UPDATED_NEW"
+  };
 
-    console.log(result);
-    });
+  docClient.update(params, function(err, data) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(data)
+      res.send(data.Item);
+    }
+  });
 });
 
 app.put('/api/boxs/like', (req, res) => {
   console.log('req: put /api/boxs/like');
 
-  const sql = "UPDATE cards SET liked = liked + ? WHERE ID = ?;"
+  const params = {
+    TableName:table,
+    Key:{ "id": req.body.id },
+    UpdateExpression: "set liked = liked + :val",
+    ExpressionAttributeValues:{
+        ":val": 1
+    },
+    ReturnValues:"UPDATED_NEW"
+  };
 
-	db.query(sql, [req.body.count, req.body.id], function (err, result, fields) {  
-    if (err) throw err;
-    res.send("like request has been succeed!");
-
-    console.log(result);
-    });
+  docClient.update(params, function(err, data) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(data)
+      res.send(data.Item);
+    }
+  });
 });
 
 app.get('/api/comments', (req, res) => {
