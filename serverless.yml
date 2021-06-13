@@ -1,0 +1,33 @@
+service: express-sample
+plugins:
+  - serverless-dotenv-plugin
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${env:AWS_DEFAULT_REGION}
+
+  environment:
+    CARDS_DB: ${env:CARDS_DB}
+    COMMENTS_DB: ${env:COMMENTS_DB}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "*"
+functions:
+  app:
+    handler: app.handler
+    events:
+      - http: 
+          path: /
+          method: ANY
+          cors: true
+      - http: 
+          path: /{proxy+}
+          method: ANY
+          cors: true

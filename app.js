@@ -1,3 +1,4 @@
+const serverless = require('serverless-http');
 const express = require("express");
 const cors = require('cors');
 const app = express();
@@ -18,7 +19,11 @@ const server = app.listen(3000, () => {
 });
 
 const docClient = new AWS.DynamoDB.DocumentClient();
-const table = process.env.Cards_DB;
+const table = process.env.NODE_CARDS_DB;
+
+app.get('/', (req, res) => {
+  res.send(process.env.NODE_CARDS_DB)
+})
 
 app.get('/api/boxs', (req, res) => {
   console.log('req: get /api/boxs');
@@ -103,7 +108,7 @@ app.get('/api/comments', (req, res) => {
   console.log(req.query.id);
 
   docClient.get({
-    TableName: process.env.Comments_DB,
+    TableName: process.env.NODE_COMMENTS_DB,
     Key:{ "card_id": parseInt(req.query.id) }
   }, (err, data) => {
     if (err) {
@@ -114,3 +119,5 @@ app.get('/api/comments', (req, res) => {
     }
   });
 });
+
+module.exports.handler = serverless(app);
