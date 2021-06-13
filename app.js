@@ -1,27 +1,11 @@
 const express = require("express");
 const cors = require('cors');
 const app = express();
-const mysql = require('mysql');
 const AWS = require("aws-sdk");
 
 AWS.config.update({
   region: "ap-northeast-1",
   endpoint: "dynamodb.ap-northeast-1.amazonaws.com:443"
-});
-
-const docClient = new AWS.DynamoDB.DocumentClient();
-const table = "balance-game-db-dev";
-
-// mysql情報を入力し、接続
-const db = mysql.createConnection({
-  host: 'db',
-  user: 'root',
-  password: 'root',
-  database: 'balance_db'
-});
-db.connect(function(err) {
-  if (err) throw err;
-  console.log('Connected');
 });
 
 // すべてのAPIをCORS許可
@@ -32,6 +16,9 @@ app.use(express.json())
 const server = app.listen(3000, () => {
   console.log("It works!")
 });
+
+const docClient = new AWS.DynamoDB.DocumentClient();
+const table = process.env.Cards_DB;
 
 app.get('/api/boxs', (req, res) => {
   console.log('req: get /api/boxs');
@@ -115,21 +102,15 @@ app.get('/api/comments', (req, res) => {
   console.log('req: get /api/comments');
   console.log(req.query.id);
 
-  const sql = "SELECT * FROM `comments` WHERE card_id = ?;"
-
-  db.query(sql, [req.query.id], function (err, result, fields) {  
-    if (err) throw err;
-    res.send(result);
-
-    console.log(result);
-    });
-  
-  // const sql = "SELECT tmp.* FROM `cards` AS tmp INNER JOIN (SELECT CEIL(RAND() * (SELECT MAX(`id`) FROM `cards`)) AS `id`) AS `random` ON tmp.id = random.id;"
-
-	// db.query(sql, function (err, result, fields) {  
-  //   if (err) throw err;
-  //   res.send(result)
-
-  //   console.log(result);
-  //   });
+  docClient.get({
+    TableName: process.env.Comments_DB,
+    Key:{ "card_id": parseInt(req.query.id) }
+  }, (err, data) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(data)
+      res.send(data.Item);
+    }
+  });
 });
