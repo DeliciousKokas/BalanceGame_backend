@@ -7,8 +7,8 @@ provider:
   region: ${env:AWS_DEFAULT_REGION}
 
   environment:
-    CARDS_DB: ${env:CARDS_DB}
-    COMMENTS_DB: ${env:COMMENTS_DB}
+    NODE_CARDS_DB: ${env:NODE_CARDS_DB}
+    NODE_COMMENTS_DB: ${env:NODE_COMMENTS_DB}
   iamRoleStatements:
     - Effect: "Allow"
       Action:

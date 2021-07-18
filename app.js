@@ -107,15 +107,18 @@ app.get('/api/comments', (req, res) => {
   console.log('req: get /api/comments');
   console.log(req.query.id);
 
-  docClient.get({
+  docClient.query({
     TableName: process.env.NODE_COMMENTS_DB,
-    Key:{ "card_id": parseInt(req.query.id) }
+    KeyConditionExpression:'card_id = :card_id',
+    ExpressionAttributeValues: {
+      ':card_id': parseInt(req.query.id)
+    }
   }, (err, data) => {
     if (err) {
       console.log(err);
     } else {
       console.log(data)
-      res.send(data.Item);
+      res.send(data.Items);
     }
   });
 });
