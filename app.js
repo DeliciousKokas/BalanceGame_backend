@@ -37,12 +37,11 @@ app.get('/api/boxs', (req, res) => {
       console.log(err);
     }else{
       const dataCount = data.Count
-      const randomID = Math.floor((Math.random() * dataCount) + 1 );
-
+      const ID = req.query.id ? parseInt(req.query.id) : Math.floor((Math.random() * dataCount) + 1 );
       docClient.get({
         TableName: table,
         Key:{
-            "id": randomID,
+            "id": ID,
         }
       }, (err, data) => {
         if (err) {
